@@ -15,7 +15,7 @@ if [ ! -d .git ]; then
 	exit 1
 fi
 
-name="$(printf "aoc%02d" "$1")"
+name="$(printf "day%02d" "$1")"
 cookie="$(cat ./.cookie)"
 echo "Creating directory for $name..."
 cargo new --bin "$name"
