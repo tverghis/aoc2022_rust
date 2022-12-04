@@ -1,4 +1,4 @@
-use std::{collections::HashSet, str::Chars};
+use std::collections::HashSet;
 
 static INPUT: &str = include_str!("../input.txt");
 
@@ -57,16 +57,15 @@ fn sum_of_priorities_for_badges(rucksacks: &[Rucksack]) -> usize {
         .chunks(3)
         .map(|chunk| chunk.iter().map(|s| s.chars().collect::<HashSet<_>>()))
         .map(|mut chunk| {
-            chunk
+            *chunk
                 .next()
                 .unwrap()
                 .intersection(&chunk.next().unwrap())
-                .map(|c| *c)
+                .cloned()
                 .collect::<HashSet<_>>()
                 .intersection(&chunk.next().unwrap())
-                .nth(0)
+                .next()
                 .unwrap()
-                .clone()
         })
         .map(priority_for_item_type)
         .sum()
