@@ -24,7 +24,7 @@ fn main() {
     let rucksacks = parse_rucksacks(INPUT);
 
     println!("Part 1: {}", sum_of_priorities(&rucksacks));
-    println!("Part 1: {}", sum_of_priorities_for_badges(&rucksacks));
+    println!("Part 2: {}", sum_of_priorities_for_badges(&rucksacks));
 }
 
 fn parse_rucksacks(input: &str) -> Vec<Rucksack<'_>> {
@@ -55,25 +55,33 @@ fn sum_of_priorities_for_badges(rucksacks: &[Rucksack]) -> usize {
         .map(|&Rucksack(l, r)| l.to_owned() + r)
         .collect::<Vec<_>>()
         .chunks(3)
-        .map(|chunk| chunk.iter().map(|s| s.chars().collect::<HashSet<_>>()))
-        .map(|mut chunk| {
-            *chunk
-                .next()
-                .unwrap()
-                .intersection(&chunk.next().unwrap())
-                .cloned()
-                .collect::<HashSet<_>>()
-                .intersection(&chunk.next().unwrap())
-                .next()
-                .unwrap()
+        .map(|chunk| {
+            chunk
+                .iter()
+                .map(|s| s.chars().collect::<HashSet<_>>())
+                .collect::<Vec<_>>() // Once `array_chunks` is stabilized this can be collected without allocating, I think
         })
+        .map(find_only_intersection)
         .map(priority_for_item_type)
         .sum()
 }
 
+fn find_only_intersection(sets: Vec<HashSet<char>>) -> char {
+    let mut first_set = sets[0].clone();
+
+    first_set.retain(|e| sets.iter().all(|set| set.contains(e)));
+
+    *first_set.iter().last().unwrap()
+}
+
 #[cfg(test)]
 mod test {
-    use crate::{parse_rucksacks, sum_of_priorities, sum_of_priorities_for_badges, Rucksack};
+    use std::collections::HashSet;
+
+    use crate::{
+        find_only_intersection, parse_rucksacks, sum_of_priorities, sum_of_priorities_for_badges,
+        Rucksack,
+    };
 
     static SAMPLE_INPUT: &str = r#"vJrwpWtwJgWrhcsFMMfFFhFp
 jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
@@ -115,6 +123,23 @@ CrZsJsPPZsGzwwsLwLmpwMDw"#;
         let rucksacks = parse_rucksacks(SAMPLE_INPUT);
 
         assert_eq!(sum_of_priorities(&rucksacks), 157);
+    }
+
+    #[test]
+    fn test_find_only_intersection() {
+        let sets = SAMPLE_INPUT
+            .lines()
+            .map(|line| line.chars().collect::<HashSet<_>>())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            find_only_intersection(sets[0..3].iter().cloned().collect()),
+            'r'
+        );
+        assert_eq!(
+            find_only_intersection(sets[3..].iter().cloned().collect()),
+            'Z'
+        );
     }
 
     #[test]
