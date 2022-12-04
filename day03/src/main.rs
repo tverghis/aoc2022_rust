@@ -1,3 +1,5 @@
+use std::{collections::HashSet, str::Chars};
+
 static INPUT: &str = include_str!("../input.txt");
 
 #[derive(Debug, PartialEq, Eq)]
@@ -22,6 +24,7 @@ fn main() {
     let rucksacks = parse_rucksacks(INPUT);
 
     println!("Part 1: {}", sum_of_priorities(&rucksacks));
+    println!("Part 1: {}", sum_of_priorities_for_badges(&rucksacks));
 }
 
 fn parse_rucksacks(input: &str) -> Vec<Rucksack<'_>> {
@@ -46,9 +49,32 @@ fn sum_of_priorities(rucksacks: &[Rucksack]) -> usize {
         .sum()
 }
 
+fn sum_of_priorities_for_badges(rucksacks: &[Rucksack]) -> usize {
+    rucksacks
+        .iter()
+        .map(|&Rucksack(l, r)| l.to_owned() + r)
+        .collect::<Vec<_>>()
+        .chunks(3)
+        .map(|chunk| chunk.iter().map(|s| s.chars().collect::<HashSet<_>>()))
+        .map(|mut chunk| {
+            chunk
+                .next()
+                .unwrap()
+                .intersection(&chunk.next().unwrap())
+                .map(|c| *c)
+                .collect::<HashSet<_>>()
+                .intersection(&chunk.next().unwrap())
+                .nth(0)
+                .unwrap()
+                .clone()
+        })
+        .map(priority_for_item_type)
+        .sum()
+}
+
 #[cfg(test)]
 mod test {
-    use crate::{parse_rucksacks, sum_of_priorities, Rucksack};
+    use crate::{parse_rucksacks, sum_of_priorities, sum_of_priorities_for_badges, Rucksack};
 
     static SAMPLE_INPUT: &str = r#"vJrwpWtwJgWrhcsFMMfFFhFp
 jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
@@ -90,5 +116,12 @@ CrZsJsPPZsGzwwsLwLmpwMDw"#;
         let rucksacks = parse_rucksacks(SAMPLE_INPUT);
 
         assert_eq!(sum_of_priorities(&rucksacks), 157);
+    }
+
+    #[test]
+    fn test_sum_of_priorities_for_badges() {
+        let rucksacks = parse_rucksacks(SAMPLE_INPUT);
+
+        assert_eq!(sum_of_priorities_for_badges(&rucksacks), 70);
     }
 }
