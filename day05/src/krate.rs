@@ -2,6 +2,12 @@ use std::collections::VecDeque;
 
 use crate::procedure::Procedure;
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum CrateMoverModel {
+    CrateMover9000,
+    CrateMover9001,
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub struct Crate(char);
 
@@ -54,13 +60,28 @@ impl IntoIterator for CrateStack {
 pub struct CrateStacks(Vec<CrateStack>);
 
 impl CrateStacks {
-    pub fn do_procedure(&mut self, procedure: &Procedure) {
+    pub fn do_procedure(&mut self, model: CrateMoverModel, procedure: &Procedure) {
+        let mut popped_crates: VecDeque<Crate> = VecDeque::with_capacity(procedure.quantity);
+
         for _ in 0..procedure.quantity {
             let c = self.0[procedure.from_stack].pop();
 
             match c {
                 None => continue,
-                Some(c) => self.0[procedure.to_stack].push(c),
+                Some(c) => popped_crates.push_back(c),
+            }
+        }
+
+        match model {
+            CrateMoverModel::CrateMover9000 => {
+                for c in popped_crates {
+                    self.0[procedure.to_stack].push(c)
+                }
+            }
+            CrateMoverModel::CrateMover9001 => {
+                for _ in 0..popped_crates.len() {
+                    self.0[procedure.to_stack].push(popped_crates.pop_back().unwrap())
+                }
             }
         }
     }
@@ -159,7 +180,7 @@ mod test {
         let mut parsed_stacks = CrateStacks::from(input);
 
         let procedure = Procedure::from("move 1 from 2 to 1");
-        parsed_stacks.do_procedure(&procedure);
+        parsed_stacks.do_procedure(CrateMoverModel::CrateMover9000, &procedure);
 
         let mut stacks = vec![CrateStack::new(); 3];
 
